@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Change a layer's color with buttons</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<style>
+.map-overlay {
+    font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    position: absolute;
+    width: 200px;
+    top: 0;
+    left: 0;
+    padding: 10px;
+}
+
+.map-overlay .map-overlay-inner {
+    background-color: #fff;
+    box-shadow:0 1px 2px rgba(0, 0, 0, 0.20);
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.map-overlay label {
+    display: block;
+    margin: 0 0 10px;
+}
+
+.map-overlay input {
+    background-color: transparent;
+    display: inline-block;
+    width: 100%;
+    position: relative;
+    margin: 0;
+    
+    cursor: ew-resize;
+}
+
+.map-overlay-inner fieldset {
+    border: none;
+    padding: 0;
+    margin: 0 0 10px;
+}
+
+.map-overlay-inner fieldset:last-child {
+    margin: 0;
+}
+
+.map-overlay-inner select {
+    width: 100%;
+}
+
+.map-overlay-inner label {
+    display: block;
+    font-weight: bold;
+    margin: 0 0 5px;
+}
+
+.map-overlay-inner button {
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.map-overlay-inner button:focus {
+    outline: none;
+}
+
+.map-overlay-inner button:hover {
+    box-shadow:inset 0 0 0 3px rgba(0, 0, 0, 0.10);
+}
+    .listing-group {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        font-weight: 600;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+        border-radius: 3px;
+        max-width: 20%;
+        color: #fff;
+    }
+
+    .listing-group input[type=checkbox]:first-child + label {
+        border-radius: 3px 3px 0 0;
+    }
+
+    .listing-group label:last-child {
+        border-radius: 0 0 3px 3px;
+        border: none;
+    }
+
+    .listing-group input[type=checkbox] {
+        display: none;
+    }
+
+    .listing-group input[type=checkbox] + label {
+        background-color: #3386c0;
+        display: block;
+        cursor: pointer;
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    }
+
+    .listing-group input[type=checkbox] + label {
+        background-color: #3386c0;
+        text-transform: capitalize;
+    }
+
+    .listing-group input[type=checkbox] + label:hover,
+    .listing-group input[type=checkbox]:checked + label {
+        background-color: #4ea0da;
+    }
+
+    .listing-group input[type=checkbox]:checked + label:before {
+        content: '✔';
+        margin-right: 5px;
+    }
+</style>
+
+<div id='map'></div>
+<div class='map-overlay top'>
+    <div class='map-overlay-inner'>
+        <fieldset>
+            <label>Select layer</label>
+            <select id='layer' name='layer'>
+                <option value='water'>Water</option>
+                <option value='building'>Buildings</option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label>Choose a color</label>
+            <div id='swatches'></div>
+        </fieldset>
+    </div>
+    
+
+</div>
+<nav id='listing-group' class='listing-group'>
+        <input type='checkbox' id='scrollZoom' checked='checked'>
+        <label for='scrollZoom'>Scroll zoom</label>
+        <input type='checkbox' id='boxZoom' checked='checked'>
+        <label for='boxZoom'>Box zoom</label>
+        <input type='checkbox' id='dragRotate' checked='checked'>
+        <label for='dragRotate'>Drag rotate</label>
+        <input type='checkbox' id='dragPan' checked='checked'>
+        <label for='dragPan'>Drag pan</label>
+        <input type='checkbox' id='keyboard' checked='checked'>
+        <label for='keyboard'>Keyboard</label>
+        <input type='checkbox' id='doubleClickZoom' checked='checked'>
+        <label for='doubleClickZoom'>Double click zoom</label>
+        <input type='checkbox' id='touchZoomRotate' checked='checked'>
+        <label for='touchZoomRotate'>Touch zoom rotate</label>
+</nav>
+<div class='map-overlay top' align=''>
+    <div class='map-overlay-inner'>
+        <label>Layer opacity: <span id='slider-value'>100%</span></label>
+        <input id='slider' type='range' min='0' max='100' step='0' value='100' />
+    </div>
+</div>    
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoicmFodWxiaGFpMTIzIiwiYSI6ImNqaWhldWNqNDE1ZXcza3VwOWRvYTc5bzUifQ.iHQf03uSdH99b0fi9AogGw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v9',
+    center: [12.338, 45.4385],
+    zoom: 17.4
+});
+
+var swatches = document.getElementById('swatches');
+var layer = document.getElementById('layer');
+var colors = [
+    '#ffffcc',
+    '#a1dab4',
+    '#41b6c4',
+    '#2c7fb8',
+    '#253494',
+    '#fed976',
+    '#feb24c',
+    '#fd8d3c',
+    '#f03b20',
+    '#bd0026'
+];
+    
+var slider = document.getElementById('slider');
+var sliderValue = document.getElementById('slider-value');
+    
+map.on('load', function() {
+
+    map.addLayer({
+        "id": "chicago",
+        "source": {
+            "type": "raster",
+            "url": "mapbox://mapbox.u8yyzaor"
+        },
+        "type": "raster"
+    });
+
+    slider.addEventListener('input', function(e) {
+        // Adjust the layers opacity. layer here is arbitrary - this could
+        // be another layer name found in your style or a custom layer
+        // added on the fly using `addSource`.
+        map.setPaintProperty('chicago', 'raster-opacity', parseInt(e.target.value, 10) / 100);
+
+        // Value indicator
+        sliderValue.textContent = e.target.value + '%';
+    });
+});
+    
+colors.forEach(function(color) {
+    var swatch = document.createElement('button');
+    swatch.style.backgroundColor = color;
+    swatch.addEventListener('click', function() {
+        map.setPaintProperty(layer.value, 'fill-color', color);
+    });
+    swatches.appendChild(swatch);
+});
+    
+document.getElementById('listing-group').addEventListener('change', function(e) {
+    var handler = e.target.id;
+    if (e.target.checked) {
+        map[handler].enable();
+    } else {
+        map[handler].disable();
+    }
+});
+map.addControl(new mapboxgl.NavigationControl());
+</script>
+
+</body>
+</html>
